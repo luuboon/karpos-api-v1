@@ -41,4 +41,9 @@ export class MedicalRecordsController {
   ) {
     return this.medicalRecordsService.updateMedicalRecord(Number(id), updates);
   }
+
+  @Get('appointment/:appointmentId')
+  async getMedicalRecordByAppointmentId(@Param('appointmentId') appointmentId: string) {
+    return this.medicalRecordsService.getMedicalRecordByAppointmentId(Number(appointmentId));
+  }
 }

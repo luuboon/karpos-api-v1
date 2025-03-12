@@ -7,6 +7,7 @@ import {
   Post,
   Put,
   Patch,
+  Query,
 } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointment } from './dto/create-appointment.dto';
@@ -20,9 +21,36 @@ export class AppointmentsController {
     return this.appointmentsService.getAppointments();
   }
 
+  @Get('detailed')
+  async getDetailedAppointments() {
+    return this.appointmentsService.getDetailedAppointments();
+  }
+
+  @Get('filtered')
+  async getFilteredAppointments(
+    @Query('status') status: 'pending' | 'completed' | 'cancelled',
+    @Query('patientId') patientId?: string,
+    @Query('doctorId') doctorId?: string,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+  ) {
+    return this.appointmentsService.getFilteredAppointments(
+      status,
+      patientId ? Number(patientId) : undefined,
+      doctorId ? Number(doctorId) : undefined,
+      fromDate,
+      toDate,
+    );
+  }
+
   @Get(':id')
   async getAppointment(@Param('id') id: string) {
     return this.appointmentsService.getAppointmentById(Number(id));
+  }
+
+  @Get(':id/detailed')
+  async getDetailedAppointment(@Param('id') id: string) {
+    return this.appointmentsService.getDetailedAppointmentById(Number(id));
   }
 
   @Post()
@@ -48,8 +76,34 @@ export class AppointmentsController {
     return this.appointmentsService.getAppointmentsByPatientId(Number(patientId));
   }
 
+  @Get('patient/:patientId/detailed')
+  async getDetailedPatientAppointments(@Param('patientId') patientId: string) {
+    return this.appointmentsService.getDetailedAppointmentsByPatientId(Number(patientId));
+  }
+
+  @Get('doctor/:doctorId')
+  async getDoctorAppointments(@Param('doctorId') doctorId: string) {
+    return this.appointmentsService.getAppointmentsByDoctorId(Number(doctorId));
+  }
+
   @Patch(':id/cancel')
   async cancelAppointment(@Param('id') id: string) {
     return this.appointmentsService.cancelAppointment(Number(id));
+  }
+
+  @Get('doctor/:doctorId/availability')
+  async getDoctorAvailability(
+    @Param('doctorId') doctorId: string,
+    @Query('date') date: string,
+  ) {
+    return this.appointmentsService.getDoctorAvailability(Number(doctorId), date);
+  }
+
+  @Post(':id/notification')
+  async saveNotificationId(
+    @Param('id') id: string,
+    @Body() data: { notificationId: string },
+  ) {
+    return this.appointmentsService.saveNotificationId(Number(id), data.notificationId);
   }
 }
