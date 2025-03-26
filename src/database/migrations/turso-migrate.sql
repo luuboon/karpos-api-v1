@@ -46,5 +46,23 @@ CREATE TRIGGER save_deleted_users
 AFTER DELETE ON users 
 BEGIN 
     INSERT INTO deleted_users (email, nombre)
-    VALUES (OLD.email, 'Usuario Eliminado via Trigger');
+    VALUES (OLD.email, 'Usuario Eliminado');
+END;
+
+-- NUEVO: Trigger para eliminar usuario cuando se elimina un paciente
+DROP TRIGGER IF EXISTS delete_user_from_patient;
+
+CREATE TRIGGER delete_user_from_patient
+AFTER DELETE ON patients
+BEGIN
+    DELETE FROM users WHERE id = OLD.id_us;
+END;
+
+-- NUEVO: Trigger para eliminar usuario cuando se elimina un doctor
+DROP TRIGGER IF EXISTS delete_user_from_doctor;
+
+CREATE TRIGGER delete_user_from_doctor
+AFTER DELETE ON doctors
+BEGIN
+    DELETE FROM users WHERE id = OLD.id_us;
 END; 

@@ -11,3 +11,6 @@ export const doctors = sqliteTable('doctors', {
     .references(() => users.id)
     .notNull(),
 });
+
+// Nota: Necesitamos crear un trigger en la base de datos para que cuando se elimine un doctor,
+// también se elimine el usuario asociado. Este trigger debe implementarse en el archivo de migraciones.
