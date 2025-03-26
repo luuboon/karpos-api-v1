@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { PatientsService } from './patients.service';
 import { CreatePatient } from './dto/create-patient.dto';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 @Controller('patients')
 export class PatientsController {
@@ -40,5 +41,19 @@ export class PatientsController {
     @Body() updates: Partial<CreatePatient>,
   ) {
     return this.patientsService.updatePatient(Number(id), updates);
+  }
+
+  // Endpoint para obtener datos de la vista paciendatos
+  @Public()
+  @Get('view/pacien-datos')
+  async getPacienDatos() {
+    return this.patientsService.getPacienDatos();
+  }
+
+  // Endpoint para obtener datos de un paciente específico de la vista
+  @Public()
+  @Get('view/pacien-datos/:id')
+  async getPacienDatosByPatientId(@Param('id') id: string) {
+    return this.patientsService.getPacienDatosByPatientId(Number(id));
   }
 }

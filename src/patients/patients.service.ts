@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { LibSQLDatabase } from 'drizzle-orm/libsql';
 import * as schema from './schema';
 import { DATABASE_CONNECTION } from 'src/database/database.module';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 @Injectable()
 export class PatientsService {
@@ -40,5 +40,15 @@ export class PatientsService {
       .select()
       .from(schema.patients)
       .where(eq(schema.patients.id_pc, id));
+  }
+
+  // Método para obtener datos de la vista paciendatos
+  async getPacienDatos() {
+    return this.database.run(sql`SELECT * FROM paciendatos`);
+  }
+
+  // Método para obtener datos de un paciente específico de la vista
+  async getPacienDatosByPatientId(id: number) {
+    return this.database.run(sql`SELECT * FROM paciendatos WHERE id_pc = ${id}`);
   }
 }

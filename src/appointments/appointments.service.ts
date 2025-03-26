@@ -254,4 +254,82 @@ export class AppointmentsService {
     
     return { message: 'ID de notificación guardado exitosamente' };
   }
+
+  // Implementación del procedimiento almacenado en JavaScript
+  async scheduleAppointmentWithTransaction(
+    patientId: number,
+    doctorId: number,
+    date: string,
+    time: string,
+    paymentAmount: number
+  ) {
+    try {
+      // Iniciar transacción
+      let result;
+      
+      // No podemos usar transacciones directamente en Turso, así que simulamos el comportamiento
+      // Verificar si el paciente existe
+      const patient = await this.database
+        .select()
+        .from(patients)
+        .where(eq(patients.id_pc, patientId));
+      
+      if (patient.length === 0) {
+        return { message: 'Error: Paciente no encontrado' };
+      }
+
+      // Verificar si el doctor existe
+      const doctor = await this.database
+        .select()
+        .from(doctors)
+        .where(eq(doctors.id_dc, doctorId));
+      
+      if (doctor.length === 0) {
+        return { message: 'Error: Doctor no encontrado' };
+      }
+
+      // Verificar si el doctor ya tiene una cita programada
+      const existingAppointment = await this.database
+        .select()
+        .from(schema.appointments)
+        .where(
+          and(
+            eq(schema.appointments.id_dc, doctorId),
+            eq(schema.appointments.date, date),
+            eq(schema.appointments.time, time)
+          )
+        );
+      
+      if (existingAppointment.length > 0) {
+        return { message: 'Error: El doctor ya tiene una cita programada en este horario' };
+      }
+
+      // Insertar la cita
+      result = await this.database
+        .insert(schema.appointments)
+        .values({
+          id_pc: patientId,
+          id_dc: doctorId,
+          date,
+          time,
+          payment_amount: paymentAmount,
+          status: 'pending',
+          payment_status: 'pending'
+        })
+        .returning();
+
+      return { 
+        message: 'Cita agendada correctamente',
+        appointment: result[0]
+      };
+    } catch (error) {
+      console.error('Error al agendar cita:', error);
+      return { message: `Error al agendar cita: ${error.message}` };
+    }
+  }
+
+  // Método para obtener datos de la vista appointment_details
+  async getAppointmentDetailsFromView() {
+    return this.database.run(sql`SELECT * FROM appointment_details`);
+  }
 }

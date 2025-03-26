@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointment } from './dto/create-appointment.dto';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -105,5 +106,22 @@ export class AppointmentsController {
     @Body() data: { notificationId: string },
   ) {
     return this.appointmentsService.saveNotificationId(Number(id), data.notificationId);
+  }
+
+  @Post('schedule-procedure')
+  async scheduleAppointmentWithProcedure(@Body() data: CreateAppointment) {
+    return this.appointmentsService.scheduleAppointmentWithTransaction(
+      data.id_pc,
+      data.id_dc,
+      data.date,
+      data.time,
+      data.payment_amount
+    );
+  }
+
+  @Public()
+  @Get('details/view')
+  async getAppointmentDetailsFromView() {
+    return this.appointmentsService.getAppointmentDetailsFromView();
   }
 }

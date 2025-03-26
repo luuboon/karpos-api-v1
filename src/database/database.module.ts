@@ -7,6 +7,7 @@ import * as doctorsSchema from '../doctors/schema';
 import * as patientsSchema from '../patients/schema';
 import * as appointmentsSchema from '../appointments/schema';
 import * as medicalRecordsSchema from '../medical-records/schema';
+import * as databaseSchema from './schema';
 
 export const DATABASE_CONNECTION = 'database-connection';
 @Module({
@@ -26,11 +27,12 @@ export const DATABASE_CONNECTION = 'database-connection';
             ...patientsSchema,
             ...appointmentsSchema,
             ...medicalRecordsSchema,
+            ...databaseSchema,
           },
         });
       },
       inject: [ConfigService],
-    },
+    }
   ],
   exports: [DATABASE_CONNECTION],
 })

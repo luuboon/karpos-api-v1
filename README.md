@@ -97,3 +97,210 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+# Karpos API - Guía de Funcionalidades Avanzadas
+
+Esta guía te mostrará cómo utilizar las funcionalidades avanzadas de SQLite/libSQL implementadas en la API de Karpos.
+
+## Índice
+
+1. [Aplicar migraciones](#aplicar-migraciones)
+2. [Triggers](#triggers)
+3. [Vistas](#vistas)
+4. [Procedimientos almacenados](#procedimientos-almacenados)
+5. [Uso en aplicaciones móviles y web](#uso-en-aplicaciones-móviles-y-web)
+
+## Aplicar migraciones
+
+Para aplicar las migraciones que incluyen los triggers, vistas y procedimientos almacenados, ejecuta:
+
+```bash
+# Inicia el servidor
+npm run start:dev
+
+# En otra terminal, ejecuta:
+curl -X POST http://localhost:3000/migrations/apply
+```
+
+## Triggers
+
+### Trigger para usuarios eliminados
+
+Hemos implementado un trigger que guarda automáticamente los datos de los usuarios eliminados en una tabla especial `deleted_users`. Este trigger se ejecuta automáticamente cuando se elimina un usuario de la tabla `users`.
+
+```sql
+CREATE TRIGGER IF NOT EXISTS save_deleted_users
+BEFORE DELETE ON users
+FOR EACH ROW
+BEGIN
+    INSERT INTO deleted_users (email, nombre)
+    SELECT OLD.email, 
+           COALESCE(
+               (SELECT nombre FROM patients WHERE id_us = OLD.id),
+               (SELECT nombre FROM doctors WHERE id_us = OLD.id),
+               'Usuario Desconocido'
+           );
+END;
+```
+
+Para probar este trigger, puedes eliminar un usuario existente:
+
+```bash
+# Obtén un token de administrador
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@karpos.com",
+    "password": "Admin123!"
+  }'
+
+# Elimina un usuario (reemplaza el ID y el token)
+curl -X DELETE http://localhost:3000/users/4 \
+  -H "Authorization: Bearer TU_TOKEN_DE_ACCESO"
+```
+
+## Vistas
+
+### Vista de datos de pacientes (paciendatos)
+
+Hemos creado una vista que combina los datos de los pacientes con sus historiales médicos.
+
+Para acceder a esta vista:
+
+```bash
+# Obtener todos los datos de pacientes
+curl -X GET http://localhost:3000/patients/view/pacien-datos \
+  -H "Authorization: Bearer TU_TOKEN_DE_ACCESO"
+
+# Obtener datos de un paciente específico
+curl -X GET http://localhost:3000/patients/view/pacien-datos/1 \
+  -H "Authorization: Bearer TU_TOKEN_DE_ACCESO"
+```
+
+### Vista de detalles de citas (appointment_details)
+
+Esta vista proporciona detalles completos de las citas, incluyendo información de pacientes y doctores.
+
+Para acceder a esta vista:
+
+```bash
+curl -X GET http://localhost:3000/appointments/details/view \
+  -H "Authorization: Bearer TU_TOKEN_DE_ACCESO"
+```
+
+## Procedimientos almacenados
+
+### Procedimiento para agendar citas
+
+Hemos simulado un procedimiento almacenado para agendar citas con validaciones integradas:
+
+- Verifica que el paciente exista
+- Verifica que el doctor exista
+- Verifica que el doctor no tenga otra cita en la misma fecha y hora
+
+Para usar este procedimiento:
+
+```bash
+curl -X POST http://localhost:3000/appointments/schedule-procedure \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer TU_TOKEN_DE_ACCESO" \
+  -d '{
+    "id_pc": 1,
+    "id_dc": 1,
+    "date": "2025-04-20",
+    "time": "10:00",
+    "payment_amount": 500.00
+  }'
+```
+
+## Uso en aplicaciones móviles y web
+
+### En React Native (móvil)
+
+```javascript
+// Ejemplo para agendar una cita usando el procedimiento almacenado
+const scheduleAppointment = async (appointment) => {
+  try {
+    const response = await fetch('http://tu-ip:3000/appointments/schedule-procedure', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
+      },
+      body: JSON.stringify(appointment)
+    });
+    
+    const result = await response.json();
+    
+    // Verificar el resultado
+    if (result.message.includes('Error')) {
+      // Manejar error
+      console.error(result.message);
+    } else {
+      // Éxito
+      console.log(result.message);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error al agendar cita:', error);
+    throw error;
+  }
+};
+
+// Ejemplo para obtener datos de la vista de pacientes
+const getPatientData = async (patientId) => {
+  try {
+    const response = await fetch(`http://tu-ip:3000/patients/view/pacien-datos/${patientId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error al obtener datos del paciente:', error);
+    throw error;
+  }
+};
+```
+
+### En React (web)
+
+```javascript
+// Ejemplo para obtener datos de la vista de detalles de citas
+const getAppointmentDetails = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/appointments/details/view', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error al obtener detalles de citas:', error);
+    throw error;
+  }
+};
+```
+
+## Notas importantes
+
+1. **Turso/libSQL**: Las funcionalidades se implementaron usando las capacidades de libSQL, la base de datos subyacente de Turso.
+
+2. **Transacciones**: Aunque SQLite/libSQL soporta transacciones, la implementación en Turso tiene algunas limitaciones. Por eso, simulamos el comportamiento de los procedimientos almacenados en el código del servidor.
+
+3. **Aplicando cambios manuales**: Si necesitas agregar más triggers o vistas, puedes modificar el archivo `src/database/migrations/turso-migrate.sql` y luego ejecutar el endpoint de migraciones nuevamente.
+
+## Solución de problemas
+
+Si encuentras algún error al aplicar las migraciones, verifica:
+
+1. Que tu base de datos Turso esté correctamente configurada y accesible
+2. Que las tablas referenciadas en los triggers y vistas existan
+3. Que los índices no estén ya creados (el mensaje "already exists" es normal y se maneja automáticamente)
+
+Para más ayuda, consulta los logs del servidor o contacta al equipo de desarrollo.

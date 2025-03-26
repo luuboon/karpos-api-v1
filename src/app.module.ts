@@ -9,6 +9,7 @@ import { DoctorsModule } from './doctors/doctors.module';
 import { PatientsModule } from './patients/patients.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { MedicalRecordsModule } from './medical-records/medical-records.module';
+import { MigrationsModule } from './database/migrations.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { MedicalRecordsModule } from './medical-records/medical-records.module';
     PatientsModule,
     AppointmentsModule,
     MedicalRecordsModule,
+    MigrationsModule,
   ],
   controllers: [],
   providers: [
