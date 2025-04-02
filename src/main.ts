@@ -10,6 +10,10 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     credentials: true,
   });
-  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
+  
+  // Escuchar en todas las interfaces de red
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port, '0.0.0.0');
+  console.log(`Servidor corriendo en http://0.0.0.0:${port}`);
 }
 bootstrap();

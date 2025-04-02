@@ -43,12 +43,23 @@ export class MigrationsController {
           message: 'No se pudo encontrar al usuario para eliminarlo' 
         };
       }
+
+      // Verificar que el email no sea nulo y convertirlo a string
+      if (!userData.email) {
+        return {
+          error: 'Email no encontrado',
+          message: 'El usuario no tiene un email asociado'
+        };
+      }
+
+      // Convertir el email a string explícitamente
+      const emailString = String(userData.email);
       
       // Ejecutamos el "procedimiento almacenado" (simulado)
       const result = await this.migrationsService.executeDeleteUserProcedure(
         Number(id), 
-        userData.email, 
-        userData.nombre
+        emailString,
+        userData.nombre || '' // Aseguramos que nombre no sea nulo
       );
       
       return { 
